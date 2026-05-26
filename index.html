@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ASeguros | Pronósticos Mundial 2026</title>
+<title>ASeguros | Pronosticos Mundial 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -510,7 +510,7 @@ function exportCSV(){
   users.forEach(function(u){var mc=Object.keys(allPredictions[u.username]||{}).length;rows.push([u.fullname||'',u.username,u.email||'',u.phone||'',u.product||'',u.points||0,mc]);});
   var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('
 ');
-  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);a.download='clientes-aseguros-mundial2026.csv';a.click();
+  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,&#65279;'+encodeURIComponent(csv);a.download='clientes-aseguros-mundial2026.csv';a.click();
   showToast('Archivo CSV exportado');
 }
 
