@@ -504,16 +504,18 @@ function renderClientsTable(){
   }).join('');
 }
 
-function exportCSV(){
+function exportCSV(){var sep=',';var nl='\n';var bom='\uFEFF';var q='"';
   var users=Object.keys(allUsers).map(function(k){return Object.assign({username:k},allUsers[k]);}).filter(function(u){return u.role!=='admin';});
-  var rows=[['Nombre','Usuario','Correo','Telefono','Producto','Puntos','Pronosticos']];
-  users.forEach(function(u){var mc=Object.keys(allPredictions[u.username]||{}).length;rows.push([u.fullname||'',u.username,u.email||'',u.phone||'',u.product||'',u.points||0,mc]);});
-  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('
-');
-  var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,&#65279;'+encodeURIComponent(csv);a.download='clientes-aseguros-mundial2026.csv';a.click();
+  var headers=['Nombre','Usuario','Correo','Telefono','Producto','Puntos','Pronosticos'];
+  var dataRows=users.map(function(u){var mc=Object.keys(allPredictions[u.username]||{}).length;return [u.fullname||'',u.username,u.email||'',u.phone||'',u.product||'',String(u.points||0),String(mc)];});
+  dataRows.unshift(headers);
+  var csv=dataRows.map(function(r){return r.map(function(v){return q+v.replace(new RegExp(q,'g'),q+q)+q;}).join(sep);}).join(nl);
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+bom+encodeURIComponent(csv);
+  a.download='clientes-aseguros-mundial2026.csv';
+  a.click();
   showToast('Archivo CSV exportado');
 }
-
 function addUser(){
   var username=document.getElementById('new-username').value.trim().toLowerCase().replace(/\s/g,'');
   var fullname=document.getElementById('new-fullname').value.trim();
