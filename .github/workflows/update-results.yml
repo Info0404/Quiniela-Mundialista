@@ -1,0 +1,38 @@
+name: Actualizar resultados quiniela
+
+# Corre solo cada 30 minutos (y se puede lanzar a mano desde la pestana Actions).
+# Mientras no exista el secreto FOOTBALL_DATA_TOKEN, el script sale limpio sin
+# hacer nada, asi que es seguro tenerlo activo desde antes.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Modo prueba (no escribe en Firebase)"
+        type: boolean
+        default: true
+
+# Evita que dos corridas se pisen.
+concurrency:
+  group: actualizar-resultados
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Ejecutar actualizador
+        env:
+          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          FIREBASE_URL: https://quiniela-aseguros-default-rtdb.firebaseio.com
+          # En corridas programadas escribe de verdad; al lanzarlo a mano respeta
+          # la casilla "Modo prueba" (que viene marcada por defecto).
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: python scripts/update_results.py
