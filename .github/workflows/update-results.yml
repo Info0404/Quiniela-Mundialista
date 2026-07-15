@@ -4,8 +4,11 @@ name: Actualizar resultados quiniela
 # Mientras no exista el secreto FOOTBALL_DATA_TOKEN, el script sale limpio sin
 # hacer nada, asi que es seguro tenerlo activo desde antes.
 on:
-  schedule:
-    - cron: "*/30 * * * *"
+  # CRON DESACTIVADO (2026-07-14): el torneo cerró en fase de grupos y el robot
+  # seguía cargando resultados de eliminatorias (y recalculando puntos), lo que
+  # revertía la tabla final y la penalización. Solo queda el disparo manual.
+  # schedule:
+  #   - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:

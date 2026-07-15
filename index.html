@@ -115,6 +115,11 @@ header{background:linear-gradient(135deg,var(--c2),var(--c3) 50%,var(--c4));padd
 .wc-hosts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .host-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);padding:5px 12px;border-radius:50px;font-size:12px;font-weight:700}
 .wc-trophy{font-size:64px}
+.champion-banner{background:linear-gradient(135deg,#c8a012,#f5c518 55%,#c8a012);color:#1a0a00;border-radius:18px;padding:22px 28px;margin-bottom:24px;display:flex;align-items:center;gap:20px;box-shadow:0 10px 40px rgba(245,197,24,.4);border:1px solid rgba(255,255,255,.35)}
+.champion-banner .cb-trophy{font-size:52px;flex-shrink:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.champion-banner .cb-txt small{display:block;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;opacity:.8}
+.champion-banner .cb-txt h2{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:1.5px;line-height:1.02;margin-top:3px}
+.champion-banner .cb-txt span{display:block;font-size:13px;font-weight:800;opacity:.85;margin-top:4px}
 footer{background:var(--surface);border-top:1px solid rgba(85,133,155,.15);padding:24px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:48px}
 .footer-logo{height:30px;border-radius:6px;background:white;padding:3px}
 .footer-slogan{font-size:12px;color:var(--muted);font-style:italic}
@@ -214,6 +219,15 @@ footer{background:var(--surface);border-top:1px solid rgba(85,133,155,.15);paddi
       </div>
     </div>
     <div class="wc-trophy">&#127942;</div>
+  </div>
+
+  <div class="champion-banner">
+    <div class="cb-trophy">&#127942;</div>
+    <div class="cb-txt">
+      <small>&#127881; Felicitamos a nuestro ganador &#127881;</small>
+      <h2>FELIPE GARC&Eacute;S</h2>
+      <span>Campe&oacute;n &middot; Quiniela ASeguros &middot; Fase de Grupos - Mundial 2026</span>
+    </div>
   </div>
 
   <div class="client-banner">
@@ -460,6 +474,7 @@ var MATCHES={
   ]
 };
 var currentUser=null,currentPhase='grupos',adminPhase='grupos',allUsers={},allPredictions={},allResults={};
+var LOCKED=true; // Quiniela CERRADA (fase de grupos finalizada). Bloquea edicion y recalculo de puntos.
 
 function initApp(){
   db.ref('users/admin').once('value').then(function(snap){
@@ -507,7 +522,14 @@ function showApp(){
   document.getElementById('app').style.display='block';
   document.getElementById('header-username').textContent=currentUser.fullname;
   document.querySelectorAll('.admin-only').forEach(function(el){el.style.display=currentUser.role==='admin'?'':'none';});
-  showTab('pronosticos');renderMatches();
+  showTab('pronosticos');renderMatches();applyLock();
+}
+
+function applyLock(){
+  if(!LOCKED)return;
+  var b1=document.querySelector('#tab-pronosticos .btn-save');if(b1)b1.style.display='none';
+  var b2=document.querySelector('#tab-admin .btn-save');if(b2)b2.style.display='none';
+  var sub=document.querySelector('#tab-pronosticos .section-sub');if(sub)sub.textContent='Quiniela cerrada — solo lectura. La fase de grupos finalizo.';
 }
 
 function showTab(name){
@@ -531,15 +553,17 @@ function flag(code){return code?'https://flagcdn.com/20x15/'+code.toLowerCase()+
 function renderMatches(){
   var ms=MATCHES[currentPhase]||[];
   var up=(allPredictions[currentUser.username]||{});
+  var ro=LOCKED?' readonly':'';
   document.getElementById('matches-container').innerHTML=ms.map(function(m){
     var pred=up[m.id]||{home:'',away:''};
     var hflag=m.hflag?'<img src="'+flag(m.hflag)+'" style="height:20px;border-radius:2px"> ':'';
     var aflag=m.aflag?'<img src="'+flag(m.aflag)+'" style="height:20px;border-radius:2px"> ':'';
-    return '<div class="match-card"><div class="match-meta">'+m.label+'</div><div class="match-row"><div class="team">'+hflag+'<span class="team-name">'+m.home+'</span></div><div class="score-inputs"><input class="score-input" type="number" min="0" max="20" id="h_'+m.id+'" value="'+pred.home+'" placeholder="0"><span class="score-sep">-</span><input class="score-input" type="number" min="0" max="20" id="a_'+m.id+'" value="'+pred.away+'" placeholder="0"></div><div class="team right"><span class="team-name">'+m.away+'</span>'+aflag+'</div></div></div>';
+    return '<div class="match-card"><div class="match-meta">'+m.label+'</div><div class="match-row"><div class="team">'+hflag+'<span class="team-name">'+m.home+'</span></div><div class="score-inputs"><input class="score-input" type="number" min="0" max="20" id="h_'+m.id+'" value="'+pred.home+'" placeholder="0"'+ro+'><span class="score-sep">-</span><input class="score-input" type="number" min="0" max="20" id="a_'+m.id+'" value="'+pred.away+'" placeholder="0"'+ro+'></div><div class="team right"><span class="team-name">'+m.away+'</span>'+aflag+'</div></div></div>';
   }).join('');
 }
 
 function savePredictions(){
+  if(LOCKED){showToast('La quiniela esta cerrada. Ganador: Felipe Garces','#f59e0b');return;}
   var ms=MATCHES[currentPhase]||[];var updates={};
   ms.forEach(function(m){var h=document.getElementById('h_'+m.id);var a=document.getElementById('a_'+m.id);if(h&&a&&h.value!==''&&a.value!==''){updates['predictions/'+currentUser.username+'/'+m.id]={home:parseInt(h.value),away:parseInt(a.value)};}});
   db.ref().update(updates).then(function(){recalcPoints();showToast('Pronosticos guardados');var msg=document.getElementById('save-msg');msg.style.display='block';setTimeout(function(){msg.style.display='none';},3000);});
@@ -557,6 +581,7 @@ function calcPoints(pred,result,phase){
 }
 
 function recalcPoints(){
+  if(LOCKED)return; // quiniela cerrada: no recalcular (protege la tabla final y la penalizacion)
   db.ref('predictions').once('value').then(function(ps){
     db.ref('results').once('value').then(function(rs){
       db.ref('users').once('value').then(function(us){
@@ -650,15 +675,16 @@ function setAdminPhase(phase,btn){
 }
 
 function renderAdminMatches(){
-  var ms=MATCHES[adminPhase]||[];
+  var ms=MATCHES[adminPhase]||[];var ro=LOCKED?' readonly':'';
   document.getElementById('admin-matches-container').innerHTML=ms.map(function(m){
     var result=allResults[m.id]||{home:'',away:''};
     var d=DOUBLED.indexOf(adminPhase)>=0;
-    return '<div class="match-card"><div class="match-meta">'+m.label+(d?' (x2)':'')+'</div><div class="match-row"><div class="team"><span class="team-name">'+m.home+'</span></div><div class="score-inputs"><input class="score-input" type="number" min="0" max="20" id="rh_'+m.id+'" value="'+result.home+'" placeholder="0" style="border-color:rgba(245,197,24,.4)"><span class="score-sep">-</span><input class="score-input" type="number" min="0" max="20" id="ra_'+m.id+'" value="'+result.away+'" placeholder="0" style="border-color:rgba(245,197,24,.4)"></div><div class="team right"><span class="team-name">'+m.away+'</span></div></div></div>';
+    return '<div class="match-card"><div class="match-meta">'+m.label+(d?' (x2)':'')+'</div><div class="match-row"><div class="team"><span class="team-name">'+m.home+'</span></div><div class="score-inputs"><input class="score-input" type="number" min="0" max="20" id="rh_'+m.id+'" value="'+result.home+'" placeholder="0" style="border-color:rgba(245,197,24,.4)"'+ro+'><span class="score-sep">-</span><input class="score-input" type="number" min="0" max="20" id="ra_'+m.id+'" value="'+result.away+'" placeholder="0" style="border-color:rgba(245,197,24,.4)"'+ro+'></div><div class="team right"><span class="team-name">'+m.away+'</span></div></div></div>';
   }).join('');
 }
 
 function saveResults(){
+  if(LOCKED){showToast('Quiniela cerrada: no se pueden cargar resultados','#f59e0b');return;}
   var ms=MATCHES[adminPhase]||[];var updates={};
   ms.forEach(function(m){var h=document.getElementById('rh_'+m.id);var a=document.getElementById('ra_'+m.id);if(h&&a&&h.value!==''&&a.value!=='')updates['results/'+m.id]={home:parseInt(h.value),away:parseInt(a.value)};});
   db.ref().update(updates).then(function(){recalcPoints();showToast('Resultados y puntos actualizados');var msg=document.getElementById('admin-save-msg');msg.style.display='block';setTimeout(function(){msg.style.display='none';},3000);});
